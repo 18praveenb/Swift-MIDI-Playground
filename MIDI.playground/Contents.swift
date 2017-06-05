@@ -216,6 +216,9 @@ public struct MIDI {
     public static let gsharp: [Byte] = g.map {$0+m2}
     public static let aflat: [Byte] = gsharp
     public static let a: [Byte] = gsharp.map {$0+m2}
+    public static let asharp: [Byte] = a.map {$0+m2}
+    public static let bflat: [Byte] = asharp
+    public static let b: [Byte] = asharp.map{$0+m2}
 
     /// Offsets from the root
     public static let P1: Byte = 0
@@ -290,11 +293,11 @@ public struct MIDI {
     /// A note, or the root of a chord
     /// To create a drum note, use channel: MIDI.drumChannel and then pitch: MIDI.Drum.<thing>.rawValue
     public struct Note {
-        var pitch: Byte
-        var velocity: Byte
-        var duration: UInt32
-        var offset: UInt32
-        var channel: Byte
+        public var pitch: Byte
+        public var velocity: Byte
+        public var duration: UInt32
+        public var offset: UInt32
+        public var channel: Byte
         init(pitch: Byte, velocity: Byte, duration: UInt32, offset: UInt32 = 0, channel: Byte = 0) {
             self.pitch = pitch
             self.velocity = velocity
@@ -372,7 +375,7 @@ public struct MIDI {
     /// - parameter dotted: defaults to false
     /// - parameter quarterNote: i.e. "division" from header chunk
     public static func duration(_ number: Int, dotted: Bool = false, quarterNote: UInt16 = defaultDivision) -> UInt32 {
-        return UInt32(quarterNote) * 4 * (dotted ? 3 : 2) / 2 / UInt32(number)
+        return number == 0 ? 0 : UInt32(quarterNote) * 4 * (dotted ? 3 : 2) / 2 / UInt32(number)
     }
 
     /// Convert from UInt32 to variable length bytes used as delta times by MIDI.
@@ -418,6 +421,10 @@ public struct MIDI {
     /// Helper function that calls toBytes for a 32 bit integer and throws away the 2 zero bytes to get a 2 byte array
     public static func toBytes(_ int: UInt16) -> [Byte] {
         return Array(toBytes(UInt32(int))[2...3]) // throw away the two high order bytes (zeroes)
+    }
+    
+    public static func tempo(bpm: Int) -> [Byte] {
+        return [0x00, 0xFF, 0x51, 0x03] + toBytes(60_000_000 / UInt32(bpm))[1...3]
     }
 }
 
